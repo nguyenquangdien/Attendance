@@ -9,9 +9,25 @@
 
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtCore import QTimer, QPoint, pyqtSignal
+from PyQt5.QtGui import QFont, QPainter, QImage, QTextCursor
+from PyQt5.QtWidgets import QApplication, QMainWindow, QTextEdit, QLabel, QDialog
+from custom_dialog import CustomDialog
+from register_face import RegisterFace
 
+from webcam import WebCamHandler
+from image_widget import ImageWidget
 
-class Ui_Dialog(object):
+import cv2
+import face_recognition
+import queue
+
+IMG_FORMAT          = QImage.Format_RGB888
+DISP_MSEC           = 50                # Delay between display cycles
+DISP_SCALE          = 1                # Scaling factor for display image
+DETECTION_METHOD    = 'hog'
+
+class StudentRegisterDialog(QMainWindow):
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
         Dialog.resize(789, 499)
@@ -45,21 +61,30 @@ class Ui_Dialog(object):
         self.classLineEdit = QtWidgets.QLineEdit(self.formLayoutWidget)
         self.classLineEdit.setObjectName("classLineEdit")
         self.formLayout.setWidget(3, QtWidgets.QFormLayout.FieldRole, self.classLineEdit)
-        self.widget = ImageWidget(Dialog)
-        self.widget.setGeometry(QtCore.QRect(380, 60, 361, 271))
-        self.widget.setObjectName("widget")
-        self.label = QtWidgets.QLabel(Dialog)
-        self.label.setGeometry(QtCore.QRect(380, 379, 331, 31))
-        self.label.setObjectName("label")
-        self.pushButton = QtWidgets.QPushButton(Dialog)
-        self.pushButton.setGeometry(QtCore.QRect(370, 450, 93, 28))
-        self.pushButton.setObjectName("pushButton")
-        self.pushButton_2 = QtWidgets.QPushButton(Dialog)
-        self.pushButton_2.setGeometry(QtCore.QRect(480, 450, 93, 28))
-        self.pushButton_2.setObjectName("pushButton_2")
-        self.pushButton_3 = QtWidgets.QPushButton(Dialog)
-        self.pushButton_3.setGeometry(QtCore.QRect(610, 450, 93, 28))
-        self.pushButton_3.setObjectName("pushButton_3")
+        self.imgWidget = ImageWidget(Dialog)
+        self.imgWidget.setGeometry(QtCore.QRect(380, 60, 361, 271))
+        self.imgWidget.setObjectName("imgWidget")
+        self.guideLabel = QtWidgets.QLabel(Dialog)
+        self.guideLabel.setGeometry(QtCore.QRect(380, 379, 331, 31))
+        self.guideLabel.setObjectName("guideLabel")
+        self.startBtn = QtWidgets.QPushButton(Dialog)
+        self.startBtn.setGeometry(QtCore.QRect(370, 450, 93, 28))
+        self.startBtn.setObjectName("startBtn")
+        self.saveBtn = QtWidgets.QPushButton(Dialog)
+        self.saveBtn.setGeometry(QtCore.QRect(480, 450, 93, 28))
+        self.saveBtn.setObjectName("saveBtn")
+        self.cancelBtn = QtWidgets.QPushButton(Dialog)
+        self.cancelBtn.setGeometry(QtCore.QRect(610, 450, 93, 28))
+        self.cancelBtn.setObjectName("cancelBtn")
+
+        self.startBtn.clicked.connect(self.onClickedStartBtn)
+        self.saveBtn.clicked.connect(self.onClickedSaveBtn)
+        self.cancelBtn.clicked.connect(self.onClickedCancelBtn)
+
+
+        self.image_queue = queue.Queue()
+        self.webcamHandler = WebCamHandler()
+        self.registerFace = RegisterFace(self.image_queue)
 
         self.retranslateUi(Dialog)
         QtCore.QMetaObject.connectSlotsByName(Dialog)
@@ -71,19 +96,77 @@ class Ui_Dialog(object):
         self.idLabel.setText(_translate("Dialog", "Mã học sinh"))
         self.birthdayLabel.setText(_translate("Dialog", "Ngày sinh"))
         self.classLabel.setText(_translate("Dialog", "Lớp học"))
-        self.label.setText(_translate("Dialog", "Hướng dẫn sử dụng ..."))
-        self.pushButton.setText(_translate("Dialog", "Lấy mẫu ảnh"))
-        self.pushButton_2.setText(_translate("Dialog", "Lưu"))
-        self.pushButton_3.setText(_translate("Dialog", "Hủy"))
+        self.guideLabel.setText(_translate("Dialog", "Hướng dẫn sử dụng ..."))
+        self.startBtn.setText(_translate("Dialog", "Lấy mẫu ảnh"))
+        self.saveBtn.setText(_translate("Dialog", "Lưu"))
+        self.cancelBtn.setText(_translate("Dialog", "Hủy"))
 
-from image_widget import ImageWidget
+    def onClickedStartBtn(self):
+        print("startBtn clicked")
+        idStudent = self.idLineEdit.text()
+        if idStudent is None or idStudent == "":
+            return
+        self.webcamHandler.startCapture(self.captureImageCallback)
+        self.registerFace.start(idStudent, self.registerCallback)
 
+    def captureImageCallback(self, image):
+        #convert from BGR to RGB for dlib
+        rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        # detect the (x,y)-coordinates of the bounding boxes
+        # corresponding to each face in the input image
+        # we are assuming the the boxes of faces are the SAME FACE or SAME PERSON
+        boxes = face_recognition.face_locations(rgb_image, model=DETECTION_METHOD)
+        if len(boxes) > 0 :
+            X = boxes[0][3] # left 
+            Y = boxes[0][0] # top
+            H = boxes[0][2] - boxes[0][0]
+            W = boxes[0][1] - boxes[0][3]
+            cropped_image = rgb_image[Y:Y+H, X:X+W]
+
+            self.image_queue.put((cropped_image, boxes))
+
+            self.show_image(image[Y-60:Y+H+60, X-40:X+W+40], self.imgWidget, DISP_SCALE)     
+
+    def registerCallback(self, result):
+        result_text = ""
+        if result:
+            result_text = "Đăng ký thành công"
+        else:
+            result_text = "Đăng ký thất bại, vui lòng thử lại"
+
+        self.guideLabel.setText(result_text)
+
+
+    # Fetch camera image from queue, and display it
+    def show_image(self, image, display, scale):
+        if image is not None and len(image) > 0:
+            img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            self.display_image(img, display, scale)
+            
+
+    # Display an image, reduce size if required
+    def display_image(self, img, display, scale=1):
+        #disp_size = img.shape[1]//scale, img.shape[0]//scale
+        size = self.imgWidget.size()
+        disp_size = size.width(), size.height()
+        disp_bpl = disp_size[0] * 3
+        img = cv2.resize(img, disp_size, interpolation=cv2.INTER_CUBIC)
+        qimg = QImage(img.data, disp_size[0], disp_size[1], 
+                      disp_bpl, IMG_FORMAT)
+        display.setImage(qimg)    
+
+    def onClickedSaveBtn(self):
+        print("saveBtn clicked")
+
+    def onClickedCancelBtn(self):
+        print("cancelBtn clicked")
+        self.webcamHandler.stopCapture()
 
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
     Dialog = QtWidgets.QDialog()
-    ui = Ui_Dialog()
+    ui = StudentRegisterDialog()
     ui.setupUi(Dialog)
     Dialog.show()
     sys.exit(app.exec_())
