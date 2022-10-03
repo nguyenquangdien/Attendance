@@ -11,7 +11,7 @@ import queue
 
 NUMBER_IMAGE = 10
 DETECTION_METHOD = 'hog'
-ENCODING_FILE = ".\encodings_file.pkl"
+ENCODING_FILE_FOLDER = ".\\Attendance\\database\\encoding_data"
 
 
 
@@ -46,14 +46,17 @@ class RegisterFace(object):
         # testing data
         data = {"encodings": knownEncodings, "names": knownNames}
         result = self.testing_encoding_data(label, data)
-        result_callback(result)
 
+        file_path = ""
         if result:
             # dump the facial encodings + names to disk
             print("[INFO] serializing encodings...")
-            f = open(ENCODING_FILE, "ab+")
+            file_path = os.path.join(ENCODING_FILE_FOLDER, label + ".tmp")
+            f = open(file_path, "wb")
             f.write(pickle.dumps(data))
             f.close()
+
+        result_callback(result, file_path)
 
     def testing_encoding_data(self, target_label, data) -> bool:
         while self.image_queue.qsize() == 0:

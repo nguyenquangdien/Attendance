@@ -14,6 +14,8 @@ from PyQt5.QtGui import QFont, QPainter, QImage, QTextCursor
 from PyQt5.QtWidgets import QApplication, QMainWindow, QTextEdit, QLabel, QDialog
 from custom_dialog import CustomDialog
 from register_face import RegisterFace
+from db_access.student_repository import StudentRepository
+from db_access.entities import StudentEntity
 
 from webcam import WebCamHandler
 from image_widget import ImageWidget
@@ -21,11 +23,14 @@ from image_widget import ImageWidget
 import cv2
 import face_recognition
 import queue
+import os
 
 IMG_FORMAT          = QImage.Format_RGB888
 DISP_MSEC           = 50                # Delay between display cycles
 DISP_SCALE          = 1                # Scaling factor for display image
 DETECTION_METHOD    = 'hog'
+DATABASE_FILE_PATH  = ".\\Attendance\\database\\attendance.db"
+ENCODING_FOLDER_PATH  = ".\\Attendance\\database\\encoding_data"
 
 class StudentRegisterDialog(QMainWindow):
     def setupUi(self, Dialog):
@@ -86,6 +91,8 @@ class StudentRegisterDialog(QMainWindow):
         self.webcamHandler = WebCamHandler()
         self.registerFace = RegisterFace(self.image_queue)
 
+        self.cur_encoding_path = ""
+
         self.retranslateUi(Dialog)
         QtCore.QMetaObject.connectSlotsByName(Dialog)
 
@@ -127,7 +134,7 @@ class StudentRegisterDialog(QMainWindow):
 
             self.show_image(image[Y-60:Y+H+60, X-40:X+W+40], self.imgWidget, DISP_SCALE)     
 
-    def registerCallback(self, result):
+    def registerCallback(self, result, encode_file_path):
         result_text = ""
         if result:
             result_text = "Đăng ký thành công"
@@ -135,7 +142,7 @@ class StudentRegisterDialog(QMainWindow):
             result_text = "Đăng ký thất bại, vui lòng thử lại"
 
         self.guideLabel.setText(result_text)
-
+        self.cur_encoding_path = encode_file_path
 
     # Fetch camera image from queue, and display it
     def show_image(self, image, display, scale):
@@ -157,6 +164,13 @@ class StudentRegisterDialog(QMainWindow):
 
     def onClickedSaveBtn(self):
         print("saveBtn clicked")
+        # store to db
+        idStudent = self.idLineEdit.text()
+        student_repo = StudentRepository(DATABASE_FILE_PATH)
+        file_path = os.path.join(ENCODING_FOLDER_PATH, idStudent + ".pkl")
+        os.rename(self.cur_encoding_path, file_path)
+        student_entity = StudentEntity(None, self.nameLineEdit.text(), self.birthdayDateEdit.text(), self.idLineEdit.text(), 1, file_path)
+        student_repo.add_student(student_entity)
 
     def onClickedCancelBtn(self):
         print("cancelBtn clicked")
