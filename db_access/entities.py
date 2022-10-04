@@ -10,8 +10,8 @@ class ClassEntity():
 class StudentEntity(): 
     id: int
     name: str
-    birthday: str
     student_id: str
+    birthday: str
     class_id: int
     encode_data_path: str
 

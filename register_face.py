@@ -8,12 +8,9 @@ import cv2
 import os
 import argparse
 import queue
+import constants
 
 NUMBER_IMAGE = 10
-DETECTION_METHOD = 'hog'
-ENCODING_FILE_FOLDER = ".\\Attendance\\database\\encoding_data"
-
-
 
 class RegisterFace(object):
     def __init__(self, image_queue) -> None:
@@ -25,7 +22,7 @@ class RegisterFace(object):
         knownEncodings = []
         knownNames = []
         count = 0
-        while count < 10 and self.encoding:
+        while count < constants.NUM_ENCODE_IMG and self.encoding:
             if self.image_queue.qsize() > 0:
                 count += 1
                 # get image from queue and 
@@ -51,7 +48,7 @@ class RegisterFace(object):
         if result:
             # dump the facial encodings + names to disk
             print("[INFO] serializing encodings...")
-            file_path = os.path.join(ENCODING_FILE_FOLDER, label + ".tmp")
+            file_path = os.path.join(constants.ENCODING_FILE_FOLDER, label + ".tmp")
             f = open(file_path, "wb")
             f.write(pickle.dumps(data))
             f.close()

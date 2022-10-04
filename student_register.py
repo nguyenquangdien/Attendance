@@ -19,6 +19,7 @@ from db_access.entities import StudentEntity
 
 from webcam import WebCamHandler
 from image_widget import ImageWidget
+import constants
 
 import cv2
 import face_recognition
@@ -28,9 +29,6 @@ import os
 IMG_FORMAT          = QImage.Format_RGB888
 DISP_MSEC           = 50                # Delay between display cycles
 DISP_SCALE          = 1                # Scaling factor for display image
-DETECTION_METHOD    = 'hog'
-DATABASE_FILE_PATH  = ".\\Attendance\\database\\attendance.db"
-ENCODING_FOLDER_PATH  = ".\\Attendance\\database\\encoding_data"
 
 class StudentRegisterDialog(QMainWindow):
     def setupUi(self, Dialog):
@@ -122,7 +120,7 @@ class StudentRegisterDialog(QMainWindow):
         # detect the (x,y)-coordinates of the bounding boxes
         # corresponding to each face in the input image
         # we are assuming the the boxes of faces are the SAME FACE or SAME PERSON
-        boxes = face_recognition.face_locations(rgb_image, model=DETECTION_METHOD)
+        boxes = face_recognition.face_locations(rgb_image, model=constants.DETECTION_METHOD)
         if len(boxes) > 0 :
             X = boxes[0][3] # left 
             Y = boxes[0][0] # top
@@ -166,8 +164,8 @@ class StudentRegisterDialog(QMainWindow):
         print("saveBtn clicked")
         # store to db
         idStudent = self.idLineEdit.text()
-        student_repo = StudentRepository(DATABASE_FILE_PATH)
-        file_path = os.path.join(ENCODING_FOLDER_PATH, idStudent + ".pkl")
+        student_repo = StudentRepository(constants.DATABASE_FILE_PATH)
+        file_path = os.path.join(constants.ENCODING_FOLDER_PATH, idStudent + ".pkl")
         os.rename(self.cur_encoding_path, file_path)
         student_entity = StudentEntity(None, self.nameLineEdit.text(), self.birthdayDateEdit.text(), self.idLineEdit.text(), 1, file_path)
         student_repo.add_student(student_entity)
