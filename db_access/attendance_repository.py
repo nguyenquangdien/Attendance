@@ -1,5 +1,5 @@
 import sqlite3
-from entities import ClassEntity, StudentEntity, AttendanceEntity
+from db_access.entities import ClassEntity, StudentEntity, AttendanceEntity
 
 
 class AttendanceRepository():
@@ -47,12 +47,11 @@ class AttendanceRepository():
     def get_by_day(self, student_id):
         conn = sqlite3.connect(self.db_name)
         query = '''
-            SELECT * FROM students 
-            WHERE id = {};
+            SELECT * FROM attendances 
+            WHERE id = ?;
             '''
         cursor = conn.cursor()
-        query.format(student_id)
-        cursor.execute(query)
+        cursor.execute(query, (student_id))
         all_rows = cursor.fetchall()
         student_entities = []
         for row in all_rows:

@@ -48,7 +48,7 @@ class RegisterFace(object):
         if result:
             # dump the facial encodings + names to disk
             print("[INFO] serializing encodings...")
-            file_path = os.path.join(constants.ENCODING_FILE_FOLDER, label + ".tmp")
+            file_path = os.path.join(constants.ENCODING_FOLDER_PATH, label + ".tmp")
             f = open(file_path, "wb")
             f.write(pickle.dumps(data))
             f.close()

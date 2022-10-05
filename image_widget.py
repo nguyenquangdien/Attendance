@@ -9,7 +9,7 @@ class ImageWidget(QWidget):
 
     def setImage(self, image):
         self.image = image
-        self.setMinimumSize(image.size())
+        #self.setMinimumSize(image.size())
         self.update()
 
     def paintEvent(self, event):

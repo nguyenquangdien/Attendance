@@ -1,5 +1,5 @@
 import sqlite3
-from entities import ClassEntity, StudentEntity, AttendanceEntity
+from db_access.entities import ClassEntity, StudentEntity, AttendanceEntity
 
 
 class ClassRepository():
@@ -44,11 +44,10 @@ class ClassRepository():
         conn = sqlite3.connect(self.db_name)
         query = '''
             SELECT * FROM classes 
-            WHERE id = {};
+            WHERE id = ?;
             '''
         cursor = conn.cursor()
-        query.format(id)
-        cursor.execute(query)
+        cursor.execute(query, (id,))
         all_rows = cursor.fetchall()
         class_entities = []
         for row in all_rows:

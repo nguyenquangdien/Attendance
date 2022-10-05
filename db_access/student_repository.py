@@ -49,11 +49,10 @@ class StudentRepository():
         conn = sqlite3.connect(self.db_name)
         query = '''
             SELECT * FROM students 
-            WHERE id = {};
+            WHERE student_id = ?;
             '''
         cursor = conn.cursor()
-        query.format(student_id)
-        cursor.execute(query)
+        cursor.execute(query, (student_id,))
         all_rows = cursor.fetchall()
         student_entities = []
         for row in all_rows:

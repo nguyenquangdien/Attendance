@@ -121,7 +121,8 @@ class StudentRegisterDialog(QMainWindow):
         # corresponding to each face in the input image
         # we are assuming the the boxes of faces are the SAME FACE or SAME PERSON
         boxes = face_recognition.face_locations(rgb_image, model=constants.DETECTION_METHOD)
-        if len(boxes) > 0 :
+        if len(boxes) == 1 :
+            # Only accept 1 face per image
             X = boxes[0][3] # left 
             Y = boxes[0][0] # top
             H = boxes[0][2] - boxes[0][0]
@@ -130,7 +131,7 @@ class StudentRegisterDialog(QMainWindow):
 
             self.image_queue.put((cropped_image, boxes))
 
-            self.show_image(image[Y-60:Y+H+60, X-40:X+W+40], self.imgWidget, DISP_SCALE)     
+        self.show_image(image[Y-60:Y+H+60, X-40:X+W+40], self.imgWidget, DISP_SCALE)     
 
     def registerCallback(self, result, encode_file_path):
         result_text = ""
@@ -167,7 +168,7 @@ class StudentRegisterDialog(QMainWindow):
         student_repo = StudentRepository(constants.DATABASE_FILE_PATH)
         file_path = os.path.join(constants.ENCODING_FOLDER_PATH, idStudent + ".pkl")
         os.rename(self.cur_encoding_path, file_path)
-        student_entity = StudentEntity(None, self.nameLineEdit.text(), self.birthdayDateEdit.text(), self.idLineEdit.text(), 1, file_path)
+        student_entity = StudentEntity(None, self.nameLineEdit.text(), self.idLineEdit.text(), self.birthdayDateEdit.text(), 1, file_path)
         student_repo.add_student(student_entity)
 
     def onClickedCancelBtn(self):
