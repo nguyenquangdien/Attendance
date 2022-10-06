@@ -77,5 +77,14 @@ class StudentRepository():
     def delete_student():
         pass
 
-    def update_student():
-        pass
+    def update_by_student_id(self, student_id, student_name, birthday, class_id, encode_file):
+        conn = sqlite3.connect(self.db_name)
+        query = '''
+            UPDATE students
+            SET name = ? , birthday = ? , class_id = ?, encode_data_path = ?  
+            WHERE student_id = ?;
+            '''
+        cursor = conn.cursor()
+        cursor.execute(query, (student_name, birthday, class_id, encode_file, student_id,))
+        conn.commit()
+        conn.close()
