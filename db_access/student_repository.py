@@ -74,6 +74,24 @@ class StudentRepository():
         conn.close()
         return student_entities
 
+    def get_students_by_class_id(self, class_id):
+        conn = sqlite3.connect(self.db_name)
+        query = '''
+            SELECT students.name, students.student_id, students.birthday, classes.name
+            FROM students
+            LEFT JOIN classes ON students.class_id = classes.id
+            WHERE (? = -1) OR (students.class_id = ?)
+            ORDER BY students.student_id
+            '''
+        cursor = conn.cursor()
+        cursor.execute(query, (class_id, class_id))
+        all_rows = cursor.fetchall()
+        student_info = []
+        for row in all_rows:
+            student_info.append((row[0], row[1], row[2], row[3]))
+        conn.close()
+        return student_info
+
     def delete_student():
         pass
 

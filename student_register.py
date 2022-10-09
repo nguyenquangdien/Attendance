@@ -13,7 +13,7 @@ from pydoc import classname
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import QTimer, QPoint, pyqtSignal
 from PyQt5.QtGui import QFont, QPainter, QImage, QTextCursor
-from PyQt5.QtWidgets import QDialog, QMessageBox
+from PyQt5.QtWidgets import QDialog, QMessageBox, QMainWindow
 from custom_dialog import CustomDialog
 from register_face import RegisterFace
 from db_access.student_repository import StudentRepository
@@ -24,7 +24,8 @@ from PyQt5.QtCore import Qt
 from webcam import WebCamHandler
 from image_widget import ImageWidget
 import constants
-from student_register_ui import StudentRegisterUI
+from student_register_window_ui import StudentRegisterMainWindowUI
+from registered_student_list import RegisteredStudentListDialog
 
 import cv2
 import face_recognition
@@ -38,15 +39,16 @@ DISP_SCALE          = 1                # Scaling factor for display image
 GUIDE_GET_SAMPLE_START      = "Đưa mặt vào chính giữa camera"
 GUIDE_GET_SAMPLE_SUCCESS    = "Lấy mẫu thành công"
 GUIDE_GET_SAMPLE_FAILURE    = "Lấy mẫu thất bại, vui lòng thử lại"
+GUIDE_SAVE_SUCCESS          = "Lưu dữ liệu thành công"
 
-class StudentRegisterDialog(QDialog, StudentRegisterUI):
+class StudentRegisterMainWindow(QMainWindow, StudentRegisterMainWindowUI):
     def __init__(self) -> None:
         super().__init__(None)
         self.setupUi(self)
         self.getSampleButton.clicked.connect(self.onClickedStartBtn)
         self.saveButton.clicked.connect(self.onClickedSaveBtn)
         self.cancelButton.clicked.connect(self.onClickedCancelBtn)
-
+        self.registeredStudentAction.triggered.connect(self.onClickedRegisteredStudent)
 
         self.image_queue = queue.Queue()
         self.webcamHandler = WebCamHandler()
@@ -191,6 +193,10 @@ class StudentRegisterDialog(QDialog, StudentRegisterUI):
                     os.remove(file_path)
                 os.rename(self.cur_encoding_path, file_path)
                 self.studentRepository.update_by_student_id(studentId, studentName, birthday, classId, file_path)
+                self.cur_encoding_path = ""
+                self.saveButton.setEnabled(False)
+                self.cancelButton.setEnabled(False)
+                self.guideLabel.setText(GUIDE_SAVE_SUCCESS)
                 return        
             else:
                 # do nothing
@@ -200,12 +206,17 @@ class StudentRegisterDialog(QDialog, StudentRegisterUI):
             os.rename(self.cur_encoding_path, file_path)
             student_entity = StudentEntity(None, studentName, studentId, birthday, classId, file_path)
             self.studentRepository.add_student(student_entity)
+            self.cur_encoding_path = ""
+            self.saveButton.setEnabled(False)
+            self.cancelButton.setEnabled(False)
+            self.guideLabel.setText(GUIDE_SAVE_SUCCESS)
+
 
     def onClickedCancelBtn(self):
         print("cancelBtn clicked")
         self.webcamHandler.stopCapture()
         self.registerFace.stop()
-        if self.cur_encoding_path != "":
+        if (self.cur_encoding_path != "" and os.path.exists(self.cur_encoding_path)):
             os.remove(self.cur_encoding_path)
             self.cur_encoding_path = ""
         # update UI
@@ -221,9 +232,13 @@ class StudentRegisterDialog(QDialog, StudentRegisterUI):
                 return entity.id
         return -1
 
+    def onClickedRegisteredStudent(self):
+        registerStudentList = RegisteredStudentListDialog()
+        registerStudentList.exec()
+
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
-    Dialog = StudentRegisterDialog()
-    Dialog.show()
+    mainWindow = StudentRegisterMainWindow()
+    mainWindow.show()
     sys.exit(app.exec_())
