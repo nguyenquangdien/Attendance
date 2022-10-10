@@ -10,15 +10,16 @@ import argparse
 import queue
 import constants
 import common
-
+import numpy
 
 
 class RecognizeFace(object):
     def __init__(self, image_queue) -> None:
         self.image_queue = image_queue
         self.running = False
-        self.loading_data_thread = threading.Thread(target = self.loading_data, args = ())
-        self.loading_data_thread.start()
+        #self.loading_data_thread = threading.Thread(target = self.loading_data, args = ())
+        #self.loading_data_thread.start()
+        self.loading_data()
         self.loading_finished = False 
 
     def loading_data(self):
@@ -30,13 +31,19 @@ class RecognizeFace(object):
 
         # load encoding data
         bytes_data = bytearray()
+        encoding_in_file = []
+        name_in_file = []
         for encodingFile in encodingFilePaths:
             abs_file_path = os.path.join(constants.ENCODING_FOLDER_PATH, encodingFile)
             file_data = open(abs_file_path, "rb").read()
-            for item in file_data:
-                bytes_data.append(item)            
+            encoding_data = pickle.loads(bytes(file_data))
+            for item in encoding_data[constants.ENCODING_DATA]:
+                encoding_in_file.append(item)
+            for item in encoding_data[constants.ENCODING_NAME]:
+                name_in_file.append(item)  
+                     
 
-        self.encoding_data = pickle.loads(bytes(bytes_data))
+        self.encoding_data = {constants.ENCODING_DATA : encoding_in_file, constants.ENCODING_NAME : name_in_file}
         self.loading_finished = True
         
     def recognize_face(self, result_callback):

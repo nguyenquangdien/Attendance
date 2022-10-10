@@ -10,8 +10,6 @@ import argparse
 import queue
 import constants
 
-NUMBER_IMAGE = 10
-
 class RegisterFace(object):
     def __init__(self, image_queue) -> None:
         self.image_queue = image_queue
@@ -37,11 +35,19 @@ class RegisterFace(object):
                     # add each encoding + name to our set of known names and encodings
                     knownEncodings.append(encoding)
                     knownNames.append(label)
+                
+                # write image to file
+                cv2.imwrite(os.path.join(constants.ENCODING_FOLDER_PATH, label + str(count) + ".jpg"), image_item[0])
+
+                # sleep
+                time.sleep(1)
+                with self.image_queue.mutex:
+                    self.image_queue.queue.clear()
             else:
                 time.sleep(1)
 
         # testing data
-        data = {"encodings": knownEncodings, "names": knownNames}
+        data = {constants.ENCODING_DATA : knownEncodings, constants.ENCODING_NAME : knownNames}
         result = self.testing_encoding_data(label, data)
 
         file_path = ""
@@ -70,7 +76,7 @@ class RegisterFace(object):
             # attempt to match each face in the input to our known encodings
             # This function returns a list of True / False  values, one for each image in our dataset.
             # since the dataset has 218 Jurassic Park images, len(matches)=218
-            matches = face_recognition.compare_faces(data["encodings"], encoding)
+            matches = face_recognition.compare_faces(data[constants.ENCODING_DATA], encoding)
             name = "Unknown"
 
             # check to see if we have found any matches
@@ -82,7 +88,7 @@ class RegisterFace(object):
 
                 # loop over the matched indexes and maintain a count for each recognized face face
                 for i in matchedIdxs:
-                    name = data['names'][i]
+                    name = data[constants.ENCODING_NAME][i]
                     counts[name] = counts.get(name, 0) + 1
 
                 # determine the recognized face with the largest number of votes: (notes: in the event of an unlikely

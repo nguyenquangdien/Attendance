@@ -116,7 +116,7 @@ class StudentRegisterMainWindow(QMainWindow, StudentRegisterMainWindowUI):
         # detect the (x,y)-coordinates of the bounding boxes
         # corresponding to each face in the input image
         # we are assuming the the boxes of faces are the SAME FACE or SAME PERSON
-        boxes = face_recognition.face_locations(rgb_image, model=constants.DETECTION_METHOD)
+        boxes = face_recognition.face_locations(rgb_image, model=constants.DETECTION_METHOD_HOG)
         if len(boxes) == 1 :
             # Only accept 1 face per image
             X = boxes[0][3] # left 
@@ -203,6 +203,8 @@ class StudentRegisterMainWindow(QMainWindow, StudentRegisterMainWindowUI):
                 return
         else:
             file_path = os.path.join(constants.ENCODING_FOLDER_PATH, studentId + ".pkl")
+            if os.path.exists(file_path):
+                os.remove(file_path)
             os.rename(self.cur_encoding_path, file_path)
             student_entity = StudentEntity(None, studentName, studentId, birthday, classId, file_path)
             self.studentRepository.add_student(student_entity)

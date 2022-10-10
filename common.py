@@ -1,4 +1,5 @@
 import face_recognition
+import constants
 
 def recognize(encoding_data, image_item):
     encodings = face_recognition.face_encodings(image_item[0], image_item[1])
@@ -10,7 +11,7 @@ def recognize(encoding_data, image_item):
         # attempt to match each face in the input to our known encodings
         # This function returns a list of True / False  values, one for each image in our dataset.
         # since the dataset has 218 Jurassic Park images, len(matches)=218
-        matches = face_recognition.compare_faces(encoding_data["encodings"], encoding)
+        matches = face_recognition.compare_faces(encoding_data[constants.ENCODING_DATA], encoding)
         name = "Unknown"
 
         # check to see if we have found any matches
@@ -22,7 +23,7 @@ def recognize(encoding_data, image_item):
 
             # loop over the matched indexes and maintain a count for each recognized face face
             for i in matchedIdxs:
-                name = encoding_data['names'][i]
+                name = encoding_data[constants.ENCODING_NAME][i]
                 counts[name] = counts.get(name, 0) + 1
 
             # determine the recognized face with the largest number of votes: (notes: in the event of an unlikely

@@ -77,7 +77,7 @@ class Ui_Dialog(object):
         # detect the (x,y)-coordinates of the bounding boxes
         # corresponding to each face in the input image
         # we are assuming the the boxes of faces are the SAME FACE or SAME PERSON
-        boxes = face_recognition.face_locations(rgb_image, model=constants.DETECTION_METHOD)
+        boxes = face_recognition.face_locations(rgb_image, model=constants.DETECTION_METHOD_HOG)
         if len(boxes) > 0 :
             X = boxes[0][3] # left 
             Y = boxes[0][0] # top
