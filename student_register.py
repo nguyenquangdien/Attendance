@@ -123,8 +123,8 @@ class StudentRegisterMainWindow(QMainWindow, StudentRegisterMainWindowUI):
             Y = boxes[0][0] # top
             H = boxes[0][2] - boxes[0][0]
             W = boxes[0][1] - boxes[0][3]
-            cropped_image = rgb_image[Y:Y+H, X:X+W]
-            self.image_queue.put((cropped_image, boxes))
+            #cropped_image = rgb_image[Y:Y+H, X:X+W]
+            self.image_queue.put((rgb_image, boxes))
 
             # display image to UI
             self.show_image(image[Y-60:Y+H+60, X-40:X+W+40], self.imgWidget, DISP_SCALE) 
@@ -181,7 +181,7 @@ class StudentRegisterMainWindow(QMainWindow, StudentRegisterMainWindowUI):
         if len(existedStudents) > 0:
             # Show warning message
             msg = QMessageBox()
-            msg.setIcon(QMessageBox.Warning)
+            #msg.setIcon(QMessageBox.Warning)
             msg.setText("Mã học sinh này đã tồn tại, bạn có muốn cập nhật thông tin?")
             msg.setWindowTitle("Cảnh bảo")
             msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel)

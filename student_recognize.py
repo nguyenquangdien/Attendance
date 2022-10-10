@@ -83,9 +83,9 @@ class Ui_Dialog(object):
             Y = boxes[0][0] # top
             H = boxes[0][2] - boxes[0][0]
             W = boxes[0][1] - boxes[0][3]
-            cropped_image = rgb_image[Y:Y+H, X:X+W]
+            #cropped_image = rgb_image[Y:Y+H, X:X+W]
 
-            self.image_queue.put((cropped_image, boxes))
+            self.image_queue.put((rgb_image, boxes))
 
     def recognizeCallback(self, result, student_id):
         result_text = ""

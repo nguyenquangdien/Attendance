@@ -40,9 +40,9 @@ class RegisterFace(object):
                 cv2.imwrite(os.path.join(constants.ENCODING_FOLDER_PATH, label + str(count) + ".jpg"), image_item[0])
 
                 # sleep
-                time.sleep(1)
-                with self.image_queue.mutex:
-                    self.image_queue.queue.clear()
+                # time.sleep(1)
+                # with self.image_queue.mutex:
+                #     self.image_queue.queue.clear()
             else:
                 time.sleep(1)
 

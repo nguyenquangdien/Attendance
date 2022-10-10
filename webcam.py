@@ -18,8 +18,8 @@ class WebCamHandler(object):
     # Grab images from the camera (separate thread)
     def grab_images(self):
         cap = cv2.VideoCapture(0)
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, IMG_SIZE[0])
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, IMG_SIZE[1])
+        #cap.set(cv2.CAP_PROP_FRAME_WIDTH, IMG_SIZE[0])
+        #cap.set(cv2.CAP_PROP_FRAME_HEIGHT, IMG_SIZE[1])
         if EXPOSURE:
             cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0)
             cap.set(cv2.CAP_PROP_EXPOSURE, EXPOSURE)
