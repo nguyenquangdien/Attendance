@@ -11,7 +11,7 @@
 from email.policy import default
 from pydoc import classname
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import QTimer, QPoint, pyqtSignal
+from PyQt5.QtCore import QTimer, QPoint, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QFont, QPainter, QImage, QTextCursor
 from PyQt5.QtWidgets import QDialog, QMessageBox, QMainWindow
 from custom_dialog import CustomDialog
@@ -31,6 +31,7 @@ import cv2
 import face_recognition
 import queue
 import os
+import numpy as np
 
 IMG_FORMAT          = QImage.Format_RGB888
 DISP_MSEC           = 50                # Delay between display cycles
@@ -53,6 +54,8 @@ class StudentRegisterMainWindow(QMainWindow, StudentRegisterMainWindowUI):
         self.image_queue = queue.Queue()
         self.webcamHandler = WebCamHandler()
         self.registerFace = RegisterFace(self.image_queue)
+
+        self.webcamHandler.imgSignal.connect(self.captureImageCallback)
 
         self.classRepository = ClassRepository(constants.DATABASE_FILE_PATH)
         self.studentRepository = StudentRepository(constants.DATABASE_FILE_PATH)
@@ -101,7 +104,8 @@ class StudentRegisterMainWindow(QMainWindow, StudentRegisterMainWindowUI):
             return
 
         # Start webcam and register face thread
-        self.webcamHandler.startCapture(self.captureImageCallback)
+        #self.webcamHandler.startCapture(self.captureImageCallback)
+        self.webcamHandler.start()
         self.registerFace.start(studentId, self.registerCallback)
 
         # change state of buttons
@@ -110,24 +114,22 @@ class StudentRegisterMainWindow(QMainWindow, StudentRegisterMainWindowUI):
         self.cancelButton.setEnabled(True)
 
 
+    @pyqtSlot(np.ndarray)
     def captureImageCallback(self, image):
         #convert from BGR to RGB for dlib
         rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        # detect the (x,y)-coordinates of the bounding boxes
-        # corresponding to each face in the input image
-        # we are assuming the the boxes of faces are the SAME FACE or SAME PERSON
-        boxes = face_recognition.face_locations(rgb_image, model=constants.DETECTION_METHOD_HOG)
-        if len(boxes) == 1 :
-            # Only accept 1 face per image
-            X = boxes[0][3] # left 
-            Y = boxes[0][0] # top
-            H = boxes[0][2] - boxes[0][0]
-            W = boxes[0][1] - boxes[0][3]
-            #cropped_image = rgb_image[Y:Y+H, X:X+W]
-            self.image_queue.put((rgb_image, boxes))
 
-            # display image to UI
-            self.show_image(image[Y-60:Y+H+60, X-40:X+W+40], self.imgWidget, DISP_SCALE) 
+        # push to queue
+        self.image_queue.put(rgb_image)
+
+        # display image to UI
+        self.display_image(rgb_image, self.imgWidget) 
+
+    def convert_cv_to_qt_img(self, cv_image):
+        h, w, ch = cv_image.shape
+        bytes_per_line = ch * w
+        qt_image = QtGui.QImage(cv_image.data, w, h, bytes_per_line, QtGui.QImage.Format_RGB888)
+        return qt_image
 
     def registerCallback(self, result, encode_file_path):
         result_text = ""
@@ -147,22 +149,11 @@ class StudentRegisterMainWindow(QMainWindow, StudentRegisterMainWindowUI):
         # stop camera
         self.webcamHandler.stopCapture()
 
-    # Fetch camera image from queue, and display it
-    def show_image(self, image, display, scale):
-        if image is not None and len(image) > 0:
-            img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            self.display_image(img, display, scale)
-            
-
     # Display an image, reduce size if required
-    def display_image(self, img, display, scale=1):
-        #disp_size = img.shape[1]//scale, img.shape[0]//scale
-        size = self.imgWidget.size()
-        disp_size = size.width(), size.height()
-        disp_bpl = disp_size[0] * 3
-        img = cv2.resize(img, disp_size, interpolation=cv2.INTER_CUBIC)
-        qimg = QImage(img.data, disp_size[0], disp_size[1], 
-                      disp_bpl, IMG_FORMAT)
+    def display_image(self, img, display):
+        h, w, ch = img.shape
+        bytes_per_line = ch * w
+        qimg = QImage(img.data, w, h, bytes_per_line, QtGui.QImage.Format_RGB888)
         display.setImage(qimg)    
 
     def onClickedSaveBtn(self):

@@ -54,7 +54,9 @@ class Ui_Dialog(object):
         self.studentRepository = StudentRepository(constants.DATABASE_FILE_PATH)
         self.attendanceRepository = AttendanceRepository(constants.DATABASE_FILE_PATH)
 
-        self.webcamHandler.startCapture(self.captureImageCallback)
+        #self.webcamHandler.startCapture(self.captureImageCallback)
+        self.webcamHandler.imgSignal.connect(self.captureImageCallback)
+        self.webcamHandler.start()
         self.recognizeFace.start(self.recognizeCallback)
 
         self.retranslateUi(Dialog)
@@ -70,15 +72,17 @@ class Ui_Dialog(object):
 
     def captureImageCallback(self, image):
         # Display image from webcam
-        self.show_image(image, self.imgWidget, 1) 
-        
         #convert from BGR to RGB for dlib
         rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+        # display image to UI
+        self.display_image(rgb_image, self.imgWidget) 
+    
         # detect the (x,y)-coordinates of the bounding boxes
         # corresponding to each face in the input image
         # we are assuming the the boxes of faces are the SAME FACE or SAME PERSON
         boxes = face_recognition.face_locations(rgb_image, model=constants.DETECTION_METHOD_HOG)
-        if len(boxes) > 0 :
+        if len(boxes) == 1:
             X = boxes[0][3] # left 
             Y = boxes[0][0] # top
             H = boxes[0][2] - boxes[0][0]
@@ -129,15 +133,11 @@ class Ui_Dialog(object):
             
 
     # Display an image, reduce size if required
-    def display_image(self, img, display, scale=1):
-        #disp_size = img.shape[1]//scale, img.shape[0]//scale
-        size = self.imgWidget.size()
-        disp_size = size.width(), size.height()
-        disp_bpl = disp_size[0] * 3
-        img = cv2.resize(img, disp_size, interpolation=cv2.INTER_CUBIC)
-        qimg = QImage(img.data, disp_size[0], disp_size[1], 
-                      disp_bpl, IMG_FORMAT)
-        display.setImage(qimg) 
+    def display_image(self, img, display):
+        h, w, ch = img.shape
+        bytes_per_line = ch * w
+        qimg = QImage(img.data, w, h, bytes_per_line, QtGui.QImage.Format_RGB888)
+        display.setImage(qimg)  
 
 if __name__ == "__main__":
     import sys

@@ -24,11 +24,19 @@ class RegisterFace(object):
             if self.image_queue.qsize() > 0:
                 count += 1
                 # get image from queue and 
-                image_item = self.image_queue.get()
+                rgb_image = self.image_queue.get()
+
+                # detect the (x,y)-coordinates of the bounding boxes
+                # corresponding to each face in the input image
+                # we are assuming the the boxes of faces are the SAME FACE or SAME PERSON
+                boxes = face_recognition.face_locations(rgb_image, model=constants.DETECTION_METHOD_HOG)
+                # Only accept 1 face per image
+                if len(boxes) != 1:
+                    continue
 
                 # compute the facial embedding for the face
                 # creates a vector of 128 numbers representing the face
-                encodings = face_recognition.face_encodings(image_item[0], image_item[1])
+                encodings = face_recognition.face_encodings(rgb_image, boxes)
 
                 # loop over the encodings
                 for encoding in encodings:
@@ -37,7 +45,7 @@ class RegisterFace(object):
                     knownNames.append(label)
                 
                 # write image to file
-                cv2.imwrite(os.path.join(constants.ENCODING_FOLDER_PATH, label + str(count) + ".jpg"), image_item[0])
+                #cv2.imwrite(os.path.join(constants.ENCODING_FOLDER_PATH, label + str(count) + ".jpg"), image_item[0])
 
                 # sleep
                 # time.sleep(1)
@@ -65,8 +73,13 @@ class RegisterFace(object):
         while self.image_queue.qsize() == 0:
             time.sleep(1)    
         
-        image_item = self.image_queue.get()
-        encodings = face_recognition.face_encodings(image_item[0], image_item[1])
+        rgb_image = self.image_queue.get()
+        # detect the (x,y)-coordinates of the bounding boxes
+        # corresponding to each face in the input image
+        # we are assuming the the boxes of faces are the SAME FACE or SAME PERSON
+        boxes = face_recognition.face_locations(rgb_image, model=constants.DETECTION_METHOD_HOG)
+
+        encodings = face_recognition.face_encodings(rgb_image, boxes)
 
         # initialize the list of names for each face detected
         names = []

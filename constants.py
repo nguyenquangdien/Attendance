@@ -8,3 +8,4 @@ NUM_RECOGNIZE_IMG       = 100
 RESOURCE_FOLDER         = ".\\Attendance\\resources"
 ENCODING_DATA           = "encodings"
 ENCODING_NAME           = "names"
+FACE_SIZE               = [300, 300] # width, height
