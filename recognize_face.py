@@ -52,17 +52,21 @@ class RecognizeFace(QThread):
             if self.image_queue.qsize() > 0:
                 count += 1
                 # get image from queue and 
+                result = False
                 rgb_image = self.image_queue.get()
                 names = common.recognize(self.encoding_data, rgb_image)
-                result = False
-                for name in names:
-                    if name != "Unknown":
-                        # success
-                        result = True
+                if names is not None:
+                    for name in names:
+                        if name != "Unknown":
+                            # success
+                            result = True    
 
-                if result or count >= constants.NUM_RECOGNIZE_IMG:
+                if result:
                     # don't recognize anymore
-                    self.recognizedSignal.emit(result, name)
+                    self.recognizedSignal.emit(result, names[0])
+                    count = 0
+                elif count >= constants.NUM_RECOGNIZE_IMG:
+                    self.recognizedSignal.emit(result, "")
                     count = 0
             else:
                 time.sleep(1)
