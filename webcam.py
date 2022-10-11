@@ -25,11 +25,6 @@ class WebCamHandler(QThread):
         h = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
         x = (int)((w - constants.FACE_SIZE[0]) / 2)
         y = (int)((h - constants.FACE_SIZE[1]) / 2)
-        if EXPOSURE:
-            cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0)
-            cap.set(cv2.CAP_PROP_EXPOSURE, EXPOSURE)
-        else:
-            cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1)
         while self.capturing:
             if cap.grab():
                 retval, image = cap.retrieve(0)

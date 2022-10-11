@@ -1,7 +1,10 @@
 import face_recognition
 import constants
+import imutils
 
 def recognize(encoding_data, rgb_image):
+    # resize width of 750px (to speedup processing)
+    rgb_image = imutils.resize(rgb_image, width=750)
     # detect the (x,y)-coordinates of the bounding boxes
     # corresponding to each face in the input image
     # we are assuming the the boxes of faces are the SAME FACE or SAME PERSON
@@ -16,7 +19,7 @@ def recognize(encoding_data, rgb_image):
         # attempt to match each face in the input to our known encodings
         # This function returns a list of True / False  values, one for each image in our dataset.
         # since the dataset has 218 Jurassic Park images, len(matches)=218
-        matches = face_recognition.compare_faces(encoding_data[constants.ENCODING_DATA], encoding)
+        matches = face_recognition.compare_faces(encoding_data[constants.ENCODING_DATA], encoding, tolerance=0.5)
         name = "Unknown"
 
         # check to see if we have found any matches
