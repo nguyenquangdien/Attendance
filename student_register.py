@@ -52,10 +52,7 @@ class StudentRegisterMainWindow(QMainWindow, StudentRegisterMainWindowUI):
         self.registeredStudentAction.triggered.connect(self.onClickedRegisteredStudent)
 
         self.image_queue = queue.Queue()
-        self.webcamHandler = WebCamHandler()
-        self.registerFace = RegisterFace(self.image_queue)
 
-        self.webcamHandler.imgSignal.connect(self.captureImageCallback)
 
         self.classRepository = ClassRepository(constants.DATABASE_FILE_PATH)
         self.studentRepository = StudentRepository(constants.DATABASE_FILE_PATH)
@@ -103,10 +100,16 @@ class StudentRegisterMainWindow(QMainWindow, StudentRegisterMainWindowUI):
             msg.exec()
             return
 
-        # Start webcam and register face thread
-        #self.webcamHandler.startCapture(self.captureImageCallback)
+        # Create threads: webcam and register face
+        self.webcamHandler = WebCamHandler()
+        self.webcamHandler.imgSignal.connect(self.captureImageCallback)
+        
+        self.registerFace = RegisterFace(self.image_queue, studentId)
+        self.registerFace.registerSingal.connect(self.registerCallback)
+
+        # Start thread
         self.webcamHandler.start()
-        self.registerFace.start(studentId, self.registerCallback)
+        self.registerFace.start()
 
         # change state of buttons
         self.getSampleButton.setEnabled(False)
@@ -125,15 +128,10 @@ class StudentRegisterMainWindow(QMainWindow, StudentRegisterMainWindowUI):
         # display image to UI
         self.display_image(rgb_image, self.imgWidget) 
 
-    def convert_cv_to_qt_img(self, cv_image):
-        h, w, ch = cv_image.shape
-        bytes_per_line = ch * w
-        qt_image = QtGui.QImage(cv_image.data, w, h, bytes_per_line, QtGui.QImage.Format_RGB888)
-        return qt_image
-
-    def registerCallback(self, result, encode_file_path):
+    @pyqtSlot(str)
+    def registerCallback(self, encode_file_path):
         result_text = ""
-        if result:
+        if encode_file_path != "":
             result_text = GUIDE_GET_SAMPLE_SUCCESS
             self.guideLabel.setText(result_text)
             self.cur_encoding_path = encode_file_path
@@ -147,7 +145,7 @@ class StudentRegisterMainWindow(QMainWindow, StudentRegisterMainWindowUI):
             self.getSampleButton.setEnabled(True)
             self.imgWidget.setImage(self.default_img)
         # stop camera
-        self.webcamHandler.stopCapture()
+        self.webcamHandler.stop()
 
     # Display an image, reduce size if required
     def display_image(self, img, display):
@@ -172,7 +170,7 @@ class StudentRegisterMainWindow(QMainWindow, StudentRegisterMainWindowUI):
         if len(existedStudents) > 0:
             # Show warning message
             msg = QMessageBox()
-            #msg.setIcon(QMessageBox.Warning)
+            msg.setIcon(QMessageBox.Warning)
             msg.setText("Mã học sinh này đã tồn tại, bạn có muốn cập nhật thông tin?")
             msg.setWindowTitle("Cảnh bảo")
             msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel)
@@ -207,7 +205,7 @@ class StudentRegisterMainWindow(QMainWindow, StudentRegisterMainWindowUI):
 
     def onClickedCancelBtn(self):
         print("cancelBtn clicked")
-        self.webcamHandler.stopCapture()
+        self.webcamHandler.stop()
         self.registerFace.stop()
         if (self.cur_encoding_path != "" and os.path.exists(self.cur_encoding_path)):
             os.remove(self.cur_encoding_path)

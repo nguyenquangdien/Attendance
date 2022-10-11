@@ -9,20 +9,25 @@ import os
 import argparse
 import queue
 import constants
+from PyQt5.QtCore import pyqtSignal, QThread
 
-class RegisterFace(object):
-    def __init__(self, image_queue) -> None:
+class RegisterFace(QThread):
+    registerSingal = pyqtSignal(str)
+
+    def __init__(self, image_queue, label) -> None:
+        QThread.__init__(self)
+        self.label = label
         self.image_queue = image_queue
-        self.encoding = False
+        self.encoding = True
+
         
-    def encoding_face(self, label, result_callback):
+    def run(self):
         # initialize the list of known encodings and known names
         knownEncodings = []
         knownNames = []
         count = 0
         while count < constants.NUM_ENCODE_IMG and self.encoding:
             if self.image_queue.qsize() > 0:
-                count += 1
                 # get image from queue and 
                 rgb_image = self.image_queue.get()
 
@@ -34,6 +39,8 @@ class RegisterFace(object):
                 if len(boxes) != 1:
                     continue
 
+                count += 1
+
                 # compute the facial embedding for the face
                 # creates a vector of 128 numbers representing the face
                 encodings = face_recognition.face_encodings(rgb_image, boxes)
@@ -42,7 +49,7 @@ class RegisterFace(object):
                 for encoding in encodings:
                     # add each encoding + name to our set of known names and encodings
                     knownEncodings.append(encoding)
-                    knownNames.append(label)
+                    knownNames.append(self.label)
                 
                 # write image to file
                 #cv2.imwrite(os.path.join(constants.ENCODING_FOLDER_PATH, label + str(count) + ".jpg"), image_item[0])
@@ -56,18 +63,18 @@ class RegisterFace(object):
 
         # testing data
         data = {constants.ENCODING_DATA : knownEncodings, constants.ENCODING_NAME : knownNames}
-        result = self.testing_encoding_data(label, data)
+        result = self.testing_encoding_data(self.label, data)
 
         file_path = ""
         if result:
             # dump the facial encodings + names to disk
             print("[INFO] serializing encodings...")
-            file_path = os.path.join(constants.ENCODING_FOLDER_PATH, label + ".tmp")
+            file_path = os.path.join(constants.ENCODING_FOLDER_PATH, self.label + ".tmp")
             f = open(file_path, "wb")
             f.write(pickle.dumps(data))
             f.close()
 
-        result_callback(result, file_path)
+        self.registerSingal.emit(file_path)
 
     def testing_encoding_data(self, target_label, data) -> bool:
         while self.image_queue.qsize() == 0:
@@ -110,12 +117,7 @@ class RegisterFace(object):
             names.append(name)
         
         print("List of label: " + ', '.join(names))
-        return (target_label in names)
-
-    def start(self, label, result_callback):
-        self.encoding = True
-        self.encoding_thread = threading.Thread(target = self.encoding_face, args = (label, result_callback,))
-        self.encoding_thread.start() 
+        return (target_label in names) 
     
     def stop(self):
         self.encoding = False

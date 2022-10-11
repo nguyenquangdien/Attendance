@@ -1,8 +1,13 @@
 import face_recognition
 import constants
 
-def recognize(encoding_data, image_item):
-    encodings = face_recognition.face_encodings(image_item[0], image_item[1])
+def recognize(encoding_data, rgb_image):
+    # detect the (x,y)-coordinates of the bounding boxes
+    # corresponding to each face in the input image
+    # we are assuming the the boxes of faces are the SAME FACE or SAME PERSON
+    boxes = face_recognition.face_locations(rgb_image, model=constants.DETECTION_METHOD_HOG)
+
+    encodings = face_recognition.face_encodings(rgb_image, boxes)
     # initialize the list of names for each face detected
     names = []
 

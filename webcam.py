@@ -49,6 +49,6 @@ class WebCamHandler(QThread):
     #     self.capture_thread = threading.Thread(target=self.grab_images, args=())
     #     self.capture_thread.start()         # Thread to grab images
 
-    def stopCapture(self):
+    def stop(self):
         self.capturing = False
         self.wait()
