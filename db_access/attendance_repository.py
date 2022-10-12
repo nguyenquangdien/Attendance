@@ -44,37 +44,15 @@ class AttendanceRepository():
             conn.rollback()
         conn.close()
 
-    def get_by_day(self, student_id):
+    def check_student_attendance(self, student_id, day):
         conn = sqlite3.connect(self.db_name)
         query = '''
-            SELECT * FROM attendances 
-            WHERE id = ?;
+            SELECT COUNT(*) AS num_attendance
+            FROM attendances
+            WHERE attendances.student_id = ? AND attendances.day = ?;
             '''
         cursor = conn.cursor()
-        cursor.execute(query, (student_id))
-        all_rows = cursor.fetchall()
-        student_entities = []
-        for row in all_rows:
-            student_entities.append(StudentEntity(row[0], row[1], row[2], row[3], row[4], row[5]))
+        cursor.execute(query, (student_id, day))
+        query_result = cursor.fetchall()
         conn.close()
-        return student_entities
-
-    def get_all_students(self):
-        conn = sqlite3.connect(self.db_name)
-        query = '''
-            SELECT * FROM students;
-            '''
-        cursor = conn.cursor()
-        cursor.execute(query)
-        all_rows = cursor.fetchall()
-        student_entities = []
-        for row in all_rows:
-            student_entities.append(StudentEntity(row[0], row[1], row[2], row[3], row[4], row[5]))
-        conn.close()
-        return student_entities
-
-    def delete_student():
-        pass
-
-    def update_student():
-        pass
+        return (int)(query_result[0][0]) > 0

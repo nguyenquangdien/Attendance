@@ -80,10 +80,13 @@ class StudentRecognizeMainWindow(QMainWindow, StudentRecognizeMainWindowUI):
 
             # store in attendance table
             today = date.today()
-            now = datetime.now()
-            attendance = AttendanceEntity(None, today.strftime("%d/%m/%Y"), students[0].student_id, now.strftime("%d/%m/%Y %H:%M:%S"), None)
-            self.attendanceRepository.add_attendance(attendance)
 
+            # check student attendance before
+            existed = self.attendanceRepository.check_student_attendance(student_id, today.strftime("%d/%m/%Y"))
+            if not existed:
+                now = datetime.now()
+                attendance = AttendanceEntity(None, today.strftime("%d/%m/%Y"), students[0].student_id, now.strftime("%d/%m/%Y %H:%M:%S"), None)
+                self.attendanceRepository.add_attendance(attendance)
             # show to list
         else:
             print("Cannot found student info")    
