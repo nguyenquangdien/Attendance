@@ -19,6 +19,7 @@ import cv2
 import face_recognition
 import constants
 from student_recognize_window_ui import StudentRecognizeMainWindowUI
+from table_model import TableModel
 
 from db_access.student_repository import StudentRepository
 from db_access.attendance_repository import AttendanceRepository
@@ -46,6 +47,11 @@ class StudentRecognizeMainWindow(QMainWindow, StudentRecognizeMainWindowUI):
 
         self.webcamHandler.start()
         self.recognizeFace.start()
+
+        self.attendanceModel = []
+        self.attendanceTableHeader = ["Họ và tên", "Mã học sinh", "Lớp", "Thời gian"]
+        self.attendanceTableModel = TableModel(self.attendanceModel, self.attendanceTableHeader)
+        self.attendanceTable.setModel(self.attendanceTableModel)
 
     @pyqtSlot(np.ndarray)
     def captureImageCallback(self, image):
@@ -87,7 +93,9 @@ class StudentRecognizeMainWindow(QMainWindow, StudentRecognizeMainWindowUI):
                 now = datetime.now()
                 attendance = AttendanceEntity(None, today.strftime("%d/%m/%Y"), students[0].student_id, now.strftime("%d/%m/%Y %H:%M:%S"), None)
                 self.attendanceRepository.add_attendance(attendance)
-            # show to list
+                # show to list
+                self.attendanceModel.insert(0, (students[0].name, student_id, class_name, now.strftime("%d/%m/%Y %H:%M:%S")))
+                self.attendanceTable.model().layoutChanged.emit()
         else:
             print("Cannot found student info")    
 

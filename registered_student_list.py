@@ -7,7 +7,7 @@ from db_access.class_repository import ClassRepository
 
 import constants
 from registered_student_list_ui import RegisteredStudentListUI
-from registered_student_model import TableModel
+from table_model import TableModel
 
 import cv2
 import face_recognition
