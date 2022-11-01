@@ -56,3 +56,28 @@ class AttendanceRepository():
         query_result = cursor.fetchall()
         conn.close()
         return (int)(query_result[0][0]) > 0
+
+    def get_student_enter_time(self, class_name, day):
+        conn = sqlite3.connect(self.db_name)
+        query = '''
+            SELECT
+                s.student_id,
+                s.name AS student_name,
+                c.name AS class_name,
+                c.start_time,
+                sa.enter_time
+            FROM classes c
+            LEFT JOIN students s ON s.class_id = c.id
+            LEFT JOIN (
+                SELECT s.student_id, a.enter_time
+                FROM students s
+                LEFT JOIN attendances a ON a.student_id = s.student_id
+                WHERE a.day = ?
+            ) AS sa ON sa.student_id = s.student_id
+            WHERE c.name = ?;
+            '''
+        cursor = conn.cursor()
+        cursor.execute(query, (day, class_name))
+        query_result = cursor.fetchall()
+        conn.close()
+        return query_result

@@ -11,6 +11,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import QTimer, QPoint, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QFont, QPainter, QImage, QTextCursor
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox
+from student_attendance_info import AttendanceInfo, EnterStatus
 from recognize_face import RecognizeFace
 from image_widget import ImageWidget
 from webcam import WebCamHandler
@@ -123,6 +124,34 @@ class StudentRecognizeMainWindow(QMainWindow, StudentRecognizeMainWindowUI):
             event.accept()
         else:
             event.ignore()
+
+    def get_student_attendance_info(self):
+        attendance_info = []
+        class_name = '10A'
+        day = '01/11/2022'
+        date_time_format = '%d/%m/%Y %H:%M:%S'
+        all_rows = self.attendanceRepository.get_student_enter_time(class_name, day)
+        for row in all_rows:
+            student_id = row[0]
+            student_name = row[1]
+            start_time_str = row[3]
+            enter_time_str = row[4]
+
+            status = EnterStatus.NOT_ENTER
+            if enter_time_str is None:
+                status = EnterStatus.NOT_ENTER
+            else:
+                enter_datetime = datetime.strptime(enter_time_str, date_time_format)
+                start_datetime = datetime.strptime(day + " " + start_time_str, date_time_format)
+                if enter_datetime <= start_datetime:
+                    status = EnterStatus.ON_TIME
+                else:
+                    status = EnterStatus.LATE
+
+            attendance_info.append(AttendanceInfo(student_id, student_name, class_name, enter_time_str, status))
+        
+        return attendance_info
+
 
 if __name__ == "__main__":
     import sys
